@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teachable Machine Mobile Interface</title>
+    <title>Teachable Machine Progress Tracker</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <style>
         * {
@@ -20,98 +20,127 @@
             min-height: 100vh;
             background: #f0f2f5;
             color: #333;
-            padding: 20px; /* Add some padding for mobile */
+            padding: 20px;
         }
 
         .container {
             text-align: center;
             background: #fff;
-            border-radius: 15px; /* Slightly more rounded corners */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow for depth */
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
             max-width: 400px;
-            width: 100%;
+            width: 90%;
             position: relative;
         }
 
         h1 {
-            font-size: 1.8rem; /* Increased font size for better readability */
+            font-size: 1.5rem;
             font-weight: 700;
-            margin-bottom: 15px; /* More space below the title */
+            margin-bottom: 20px;
             color: #4a90e2;
         }
 
         #webcam-container {
             display: flex;
             justify-content: center;
+            align-items: center;
             position: relative;
-            margin: 20px 0; /* Increased margin for better spacing */
+            margin: 20px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #4a90e2;
+            width: 100%;
         }
 
-        #webcam {
-            border-radius: 10px; /* Rounded corners for video */
-            width: 100%; /* Make video responsive */
-            max-width: 300px; /* Limit max width for mobile */
-            height: auto; /* Maintain aspect ratio */
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Light shadow for the video */
-            display: none; /* Hide video initially */
+        video {
+            border-radius: 12px;
+            width: 100%;
+            max-width: 350px;
+            display: none; /* Initially hidden until Start is clicked */
         }
 
         #floating-label {
             position: absolute;
-            top: 50%; /* Center vertically */
-            left: 50%; /* Center horizontally */
-            transform: translate(-50%, -50%); /* Adjust for the size of the element */
-            background-color: rgba(255, 255, 255, 0.9); /* Slightly more opaque */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
             color: #4a90e2;
             padding: 8px 12px;
             border-radius: 10px;
             font-size: 1.2rem;
             font-weight: bold;
-            display: none; /* Hidden initially */
+            display: none;
             transition: opacity 0.3s ease;
         }
 
         button {
-            padding: 12px 24px; /* Slightly larger padding */
-            font-size: 1.1rem; /* Larger font size for buttons */
+            padding: 12px 24px;
+            font-size: 1rem;
             font-weight: bold;
             color: #fff;
             background-color: #4a90e2;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: background-color 0.3s, transform 0.1s;
             outline: none;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+            margin-top: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         button:hover {
             background-color: #357ab3;
-            transform: translateY(-1px); /* Subtle lift on hover */
+            transform: scale(1.03);
         }
 
-        button:active {
-            transform: translateY(0); /* Reset lift when clicked */
+        #progress-bar-container {
+            width: 100%;
+            background: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        #progress-bar {
+            height: 20px;
+            background: #4a90e2;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        #status {
+            font-size: 1.1rem;
+            color: #555;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Teachable Machine Image Model</h1>
-        <button type="button" onclick="init()">Start</button>
+        <h1>Teachable Machine Progress Tracker</h1>
         <div id="webcam-container">
             <video id="webcam" autoplay playsinline></video>
             <div id="floating-label"></div> <!-- Floating label for class name -->
         </div>
+        <button type="button" onclick="init()">Start</button>
+        <div id="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="status">Waiting for class 1...</div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script type="text/javascript">
         const URL = "https://teachablemachine.withgoogle.com/models/OdW4XeCrx/";
-
+        
         let model, video, maxPredictions;
+        let currentClassIndex = 1;
+        let classRecognitionTime = 0;
+        const requiredTime = 10;
+        const numClasses = 7;
 
         async function init() {
             const modelURL = URL + "model.json";
@@ -121,23 +150,17 @@
             maxPredictions = model.getTotalClasses();
 
             video = document.getElementById("webcam");
-
-            const constraints = {
-                video: {
-                    facingMode: "environment"
-                }
-            };
+            const constraints = { video: { facingMode: "environment" } };
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
+                video.style.display = "block"; // Show the video when initialized
                 video.addEventListener("loadeddata", () => {
-                    video.style.display = "block"; // Show the video once loaded
                     predictLoop();
                 });
 
-                // Hide the start button after starting
-                document.querySelector("button").style.display = "none";
+                document.querySelector("button").style.display = "none"; // Hide the Start button
             } catch (error) {
                 console.error("Error accessing webcam:", error);
             }
@@ -152,26 +175,39 @@
 
         async function predict() {
             const prediction = await model.predict(video);
-            let highestClass = "";
-            let highestProbability = 0;
+            const highestPrediction = prediction.reduce((prev, current) => {
+                return (prev.probability > current.probability) ? prev : current;
+            });
 
-            for (let i = 0; i < maxPredictions; i++) {
-                const probability = prediction[i].probability;
-
-                if (probability > highestProbability) {
-                    highestProbability = probability;
-                    highestClass = prediction[i].className;
-                }
-            }
-
+            const currentClassLabel = "Class " + currentClassIndex;
             const floatingLabel = document.getElementById("floating-label");
-            if (highestProbability > 0.6) { // Show only if confidence is higher than 60%
+
+            if (highestPrediction.className === currentClassLabel && highestPrediction.probability > 0.6) {
+                classRecognitionTime += 1;
                 floatingLabel.style.display = "block";
-                floatingLabel.style.opacity = 1;
-                floatingLabel.innerText = highestClass;
+                floatingLabel.innerText = currentClassLabel;
             } else {
-                floatingLabel.style.opacity = 0;
+                classRecognitionTime = 0;
+                floatingLabel.style.display = "none";
             }
+
+            if (classRecognitionTime >= requiredTime) {
+                currentClassIndex++;
+                updateProgress();
+                classRecognitionTime = 0;
+            }
+
+            if (currentClassIndex > numClasses) {
+                document.getElementById("status").innerText = "All classes recognized!";
+                return;
+            } else {
+                document.getElementById("status").innerText = `Waiting for ${currentClassLabel}...`;
+            }
+        }
+
+        function updateProgress() {
+            const progress = (currentClassIndex - 1) / numClasses * 100;
+            document.getElementById("progress-bar").style.width = progress + "%";
         }
     </script>
 </body>
