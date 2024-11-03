@@ -20,23 +20,24 @@
             min-height: 100vh;
             background: #f0f2f5;
             color: #333;
+            padding: 20px; /* Add some padding for mobile */
         }
 
         .container {
             text-align: center;
             background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 15px; /* Slightly more rounded corners */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Enhanced shadow for depth */
             padding: 20px;
             max-width: 400px;
-            width: 90%;
+            width: 100%;
             position: relative;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.8rem; /* Increased font size for better readability */
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 15px; /* More space below the title */
             color: #4a90e2;
         }
 
@@ -44,17 +45,25 @@
             display: flex;
             justify-content: center;
             position: relative;
-            margin: 15px 0;
+            margin: 20px 0; /* Increased margin for better spacing */
+        }
+
+        #webcam {
+            border-radius: 10px; /* Rounded corners for video */
+            width: 100%; /* Make video responsive */
+            max-width: 300px; /* Limit max width for mobile */
+            height: auto; /* Maintain aspect ratio */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Light shadow for the video */
         }
 
         #floating-label {
             position: absolute;
             top: 10px;
             right: 10px;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.9); /* Slightly more opaque */
             color: #4a90e2;
             padding: 8px 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 1.2rem;
             font-weight: bold;
             display: none;
@@ -62,20 +71,26 @@
         }
 
         button {
-            padding: 10px 20px;
-            font-size: 1rem;
+            padding: 12px 24px; /* Slightly larger padding */
+            font-size: 1.1rem; /* Larger font size for buttons */
             font-weight: bold;
             color: #fff;
             background-color: #4a90e2;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.2s;
             outline: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Shadow for depth */
         }
 
         button:hover {
             background-color: #357ab3;
+            transform: translateY(-1px); /* Subtle lift on hover */
+        }
+
+        button:active {
+            transform: translateY(0); /* Reset lift when clicked */
         }
     </style>
 </head>
@@ -84,16 +99,17 @@
         <h1>Teachable Machine Image Model</h1>
         <button type="button" onclick="init()">Start</button>
         <div id="webcam-container">
-            <div id="floating-label"></div> <!-- Floating label for class name -->
+            <video id="webcam" autoplay playsinline></video>
+            <div id="floating-label"></div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script type="text/javascript">
-        const URL = "https://teachablemachine.withgoogle.com/models/rKKYwB-D9/";
+        const URL = "https://teachablemachine.withgoogle.com/models/OdW4XeCrx/";
 
-        let model, webcam, maxPredictions;
+        let model, video, maxPredictions;
 
         async function init() {
             const modelURL = URL + "model.json";
@@ -102,28 +118,37 @@
             model = await tmImage.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
 
-            const flip = false; // Don't flip for rear camera
-            webcam = new tmImage.Webcam(300, 300, flip);
+            video = document.getElementById("webcam");
 
-            // Set up webcam with the rear camera if available
-            await webcam.setup({ facingMode: "environment" });
-            await webcam.play();
-            window.requestAnimationFrame(loop);
+            const constraints = {
+                video: {
+                    facingMode: "environment"
+                }
+            };
 
-            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+                video.addEventListener("loadeddata", () => {
+                    predictLoop();
+                });
 
-            // Hide the button after the first click
-            document.querySelector("button").style.display = "none";
+                // Hide the start button after starting
+                document.querySelector("button").style.display = "none";
+            } catch (error) {
+                console.error("Error accessing webcam:", error);
+            }
         }
 
-        async function loop() {
-            webcam.update();
-            await predict();
-            window.requestAnimationFrame(loop);
+        async function predictLoop() {
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                await predict();
+            }
+            requestAnimationFrame(predictLoop);
         }
 
         async function predict() {
-            const prediction = await model.predict(webcam.canvas);
+            const prediction = await model.predict(video);
             let highestClass = "";
             let highestProbability = 0;
 
@@ -136,9 +161,8 @@
                 }
             }
 
-            // Display the floating label based on the highest probability class
             const floatingLabel = document.getElementById("floating-label");
-            if (highestProbability > 0.6) { // Show only if confidence is higher than 60%
+            if (highestProbability > 0.6) {
                 floatingLabel.style.display = "block";
                 floatingLabel.style.opacity = 1;
                 floatingLabel.innerText = highestClass;
