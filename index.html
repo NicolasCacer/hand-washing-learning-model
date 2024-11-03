@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Gesture Detection</title>
+    <script async src="https://docs.opencv.org/master/opencv.js" type="text/javascript"></script>
+    <style>
+        body { display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 1px solid black; margin-top: 10px; }
+        video { display: none; } /* Hide the video element */
+    </style>
+</head>
+<body>
+    <h1>Hand Gesture Detection</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <div id="gestureLabel" style="font-size: 24px; margin-top: 20px;"></div>
+
+    <script>
+        // Step 1: Access the Webcam
+        const video = document.getElementById('video');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(err => console.error("Error accessing webcam: ", err));
+
+        // Step 2: Capture Video Frames
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function processVideo() {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const mat = cv.imread(canvas);
+            detectGestures(mat); // Call the function to detect gestures
+            cv.imshow('canvas', mat);
+            mat.delete(); // Clean up memory
+            requestAnimationFrame(processVideo);
+        }
+
+        requestAnimationFrame(processVideo); // Start processing video frames
+
+        // Step 3: Gesture Recognition Logic
+        function detectGestures(mat) {
+            // Convert to grayscale
+            const grayMat = new cv.Mat();
+            cv.cvtColor(mat, grayMat, cv.COLOR_RGBA2GRAY);
+            cv.threshold(grayMat, grayMat, 120, 255, cv.THRESH_BINARY);
+
+            // Find contours
+            const contours = new cv.MatVector();
+            const hierarchy = new cv.Mat();
+            cv.findContours(grayMat, contours, hierarchy, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE);
+
+            // Check contours and recognize gestures
+            let gesture = "No Gesture";
+            if (contours.size() > 0) {
+                const largestContour = contours.get(0); // Get the largest contour
+                const area = cv.contourArea(largestContour);
+                if (area > 5000) { // Threshold area for gesture recognition
+                    gesture = "Hand Detected"; // Placeholder for recognizing gestures
+                }
+            }
+
+            // Display the recognized gesture
+            document.getElementById('gestureLabel').innerText = gesture;
+
+            // Clean up
+            grayMat.delete();
+            contours.delete();
+            hierarchy.delete();
+        }
+
+        // Optional: Load and Use a Machine Learning Model
+        // Uncomment and implement this if you have a model to use
+        /*
+        let model;
+        async function loadModel() {
+            model = await tf.loadLayersModel('path/to/your/model.json');
+            console.log("Model loaded");
+        }
+        loadModel();
+        */
+    </script>
+</body>
+</html>
