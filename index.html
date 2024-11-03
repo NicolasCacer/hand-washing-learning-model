@@ -3,122 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adherencia de Técnica de Lavado</title>
+    <title>Teachable Machine Audio and Video Model</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Roboto', sans-serif;
-        }
-
+        /* Combined Styles */
         body {
+            font-family: Arial, sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-            background: #f0f2f5;
-            color: #333;
-            padding: 20px;
+            justify-content: center;
+            height: 100vh;
+            background-color: #e9ecef;
+            margin: 0;
+            overflow: auto;
         }
-
         .container {
             text-align: center;
             background: #fff;
             border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            max-width: 400px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: auto;
+            max-width: 600px;
             width: 90%;
-            position: relative;
         }
-
         h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
+            color: #4a90e2;
             margin-bottom: 20px;
-            color: #4a90e2;
         }
-
-        #webcam-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            margin: 20px 0;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid #4a90e2;
-            width: 100%;
-        }
-
-        video {
-            border-radius: 12px;
-            width: 100%;
-            display: none; /* Initially hidden until Start is clicked */
-        }
-
-        #floating-label, #state-overlay {
-            position: absolute;
-            z-index: 10;
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #4a90e2;
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            display: none;
-            transition: opacity 0.3s ease;
-            text-align: center;
-            width: 80%;
-            max-width: 300px;
-        }
-
-        #floating-label {
-            top: 40%; /* Position in the center of the video */
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        #state-overlay {
-            top: 60%; /* Position slightly below the floating label */
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 1rem;
-            color: #333;
-            opacity: 0.9;
-            background-color: rgba(255, 255, 255, 0.8);
-        }
-
         button {
             padding: 12px 24px;
-            font-size: 1rem;
+            font-size: 18px;
             font-weight: bold;
-            color: #fff;
-            background-color: #4a90e2;
+            color: white;
+            background-color: #007bff;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.1s;
-            outline: none;
             margin-top: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
         }
-
         button:hover {
-            background-color: #357ab3;
-            transform: scale(1.03);
+            background-color: #0056b3;
         }
-
-        #progress-bar-container {
+        #label-container, #floating-label, #state-overlay {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        #label-container {
+            background-color: #ffffff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            color: #007bff;
+        }
+        #webcam-container {
+            position: relative;
             width: 100%;
+            height: 'auto';
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #floating-label {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: bold;
+            background-color: rgba(0, 123, 255, 0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+        #state-overlay {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: bold;
+            background-color: rgba(0, 123, 255, 0.7);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+        #progress-bar-container {
+            width: 90%;
             background: #ddd;
             border-radius: 5px;
             overflow: hidden;
-            margin: 20px 0;
+            margin-top: 20px;
         }
-
         #progress-bar {
             height: 20px;
             background: #4a90e2;
@@ -128,102 +114,147 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Teachable Machine Progress Tracker</h1>
-        <div id="webcam-container">
-            <video id="webcam" autoplay playsinline></video>
-            <div id="floating-label"></div>
-            <div id="state-overlay">Esperando paso 1...</div>
-        </div>
-        <button type="button" onclick="init()">Iniciar</button>
-        <div id="progress-bar-container">
-            <div id="progress-bar"></div>
-        </div>
+
+<div class="container">
+    <h1>Teachable Machine Audio & Video Model</h1>
+    <button type="button" onclick="initAudio()">Start Listening</button>
+    <div id="label-container">Listening...</div>
+
+    <div id="webcam-container">
+        <video id="webcam" autoplay playsinline></video>
+        <div id="floating-label"></div>
+        <div id="state-overlay">Esperando paso 1...</div>
     </div>
+    <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-    <script type="text/javascript">
-        const URL = "https://teachablemachine.withgoogle.com/models/OdW4XeCrx/";
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+<script>
+    const audioURL = "https://teachablemachine.withgoogle.com/models/StT8pVIhN/";
+    const videoURL = "https://teachablemachine.withgoogle.com/models/OdW4XeCrx/";
+    let recognizer, model, video, maxPredictions;
+    let audioModelReady = false;
+
+    async function initAudio() {
+        const checkpointURL = audioURL + "model.json";
+        const metadataURL = audioURL + "metadata.json";
         
-        let model, video, maxPredictions;
-        let currentClassIndex = 1;
-        let classRecognitionTime = 0;
-        const requiredTime = 10;
-        const numClasses = 7;
-        let recognitionComplete = false; // Track if recognition is complete
-
-        async function init() {
-            const modelURL = URL + "model.json";
-            const metadataURL = URL + "metadata.json";
-
-            model = await tmImage.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
-
-            video = document.getElementById("webcam");
-            const constraints = { video: { facingMode: "environment" } };
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
-                video.style.display = "block"; // Show the video when initialized
-                video.addEventListener("loadeddata", () => {
-                    predictLoop();
-                });
-
-                document.querySelector("button").style.display = "none"; // Hide the Start button
-            } catch (error) {
-                console.error("Error accessing webcam:", error);
-            }
-        }
-
-        async function predictLoop() {
-            if (recognitionComplete) return; // Stop if all classes are recognized
-
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                await predict();
-            }
-            requestAnimationFrame(predictLoop);
-        }
-
-        async function predict() {
-            const prediction = await model.predict(video);
-            const highestPrediction = prediction.reduce((prev, current) => {
-                return (prev.probability > current.probability) ? prev : current;
-            });
-
-            const currentClassLabel = "Class " + currentClassIndex;
-            const floatingLabel = document.getElementById("floating-label");
-            const stateOverlay = document.getElementById("state-overlay");
-
-            if (highestPrediction.className === currentClassLabel && highestPrediction.probability > 0.5) {
-                classRecognitionTime += 1;
-                floatingLabel.style.display = "block";
-                floatingLabel.innerText = currentClassLabel;
-            } else {
-                classRecognitionTime = 0;
-                floatingLabel.style.display = "none";
-            }
-
-            stateOverlay.style.display = "block";
-            stateOverlay.innerText = `Esperando por paso ${currentClassLabel.split(" ")[1]}`;
-
-            if (classRecognitionTime >= requiredTime) {
-                currentClassIndex++;
-                updateProgress();
-                classRecognitionTime = 0;
-
-                if (currentClassIndex > numClasses) {
-                    stateOverlay.innerText = "All classes recognized!";
-                    recognitionComplete = true; // Stop recognition
+        recognizer = speechCommands.create("BROWSER_FFT", undefined, checkpointURL, metadataURL);
+        await recognizer.ensureModelLoaded();
+        audioModelReady = true;
+        
+        recognizer.listen(result => {
+            const classLabels = recognizer.wordLabels();
+            const scores = result.scores;
+            let maxScore = 0, maxIndex = -1;
+            
+            for (let i = 0; i < scores.length; i++) {
+                if (scores[i] > maxScore) {
+                    maxScore = scores[i];
+                    maxIndex = i;
                 }
             }
-        }
 
-        function updateProgress() {
-            const progress = (currentClassIndex - 1) / numClasses * 100;
-            document.getElementById("progress-bar").style.width = progress + "%";
+            const detectedClass = classLabels[maxIndex];
+            document.getElementById("label-container").innerText = `Detected: ${detectedClass}`;
+
+            if (detectedClass !== "Background Noise" && maxScore > 0.9) {
+                recognizer.stopListening(); // Stop listening once we start video analysis
+                initVideoAnalysis();
+            }
+        }, {
+            includeSpectrogram: true,
+            probabilityThreshold: 0.9,
+            overlapFactor: 0.1
+        });
+    }
+
+    async function initVideoAnalysis() {
+        document.getElementById("webcam-container").style.display = "flex";
+        
+        const modelURL = videoURL + "model.json";
+        const metadataURL = videoURL + "metadata.json";
+        
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+        
+        video = document.getElementById("webcam");
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+        
+        video.addEventListener("loadeddata", () => predictLoop());
+    }
+
+    async function predictLoop() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            await predict();
         }
-    </script>
+        requestAnimationFrame(predictLoop);
+    }
+
+    let currentClassIndex = 1;
+let classRecognitionTime = 0;
+const requiredTime = 10;
+const numClasses = 7;
+let isCompleted = false; // New flag to indicate completion
+
+async function predictLoop() {
+    if (!isCompleted && video.readyState === video.HAVE_ENOUGH_DATA) {
+        await predict();
+    }
+    if (!isCompleted) {
+        requestAnimationFrame(predictLoop);
+    }
+}
+
+async function predict() {
+    const prediction = await model.predict(video);
+    const highestPrediction = prediction.reduce((prev, current) => (prev.probability > current.probability ? prev : current));
+    const currentClassLabel = "Class " + currentClassIndex;
+    const floatingLabel = document.getElementById("floating-label");
+    const stateOverlay = document.getElementById("state-overlay");
+
+    if (highestPrediction.className === currentClassLabel && highestPrediction.probability > 0.5) {
+        classRecognitionTime += 1;
+        floatingLabel.style.display = "block";
+        floatingLabel.innerText = "Paso " + currentClassIndex;
+    } else {
+        classRecognitionTime = 0;
+        floatingLabel.style.display = "none";
+    }
+
+    stateOverlay.innerText = `Esperando por paso ${currentClassLabel.split(" ")[1]}`;
+
+    if (classRecognitionTime >= requiredTime) {
+        if (currentClassIndex < numClasses) {
+            currentClassIndex++;
+            updateProgress();
+            classRecognitionTime = 0;
+        } else {
+            // Set the completion flag to stop further predictions
+            isCompleted = true;
+            stateOverlay.innerText = "Felicidades, te has lavado correctamente!";
+            stopProgress();
+        }
+    }
+}
+
+    
+
+    function updateProgress() {
+        const progress = (currentClassIndex - 1) / numClasses * 100;
+        document.getElementById("progress-bar").style.width = progress + "%";
+    }
+
+    function stopProgress() {
+        document.getElementById("progress-bar").style.width = "100%";
+    }
+</script>
+
 </body>
 </html>
