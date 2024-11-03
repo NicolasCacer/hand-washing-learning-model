@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teachable Machine Interface with Class Label</title>
+    <title>Teachable Machine Mobile Interface</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <style>
         * {
@@ -29,7 +29,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
             max-width: 400px;
-            width: 100%;
+            width: 90%;
             position: relative;
         }
 
@@ -57,7 +57,7 @@
             border-radius: 8px;
             font-size: 1.2rem;
             font-weight: bold;
-            display: none; /* Hidden initially */
+            display: none;
             transition: opacity 0.3s ease;
         }
 
@@ -102,9 +102,11 @@
             model = await tmImage.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
 
-            const flip = true;
+            const flip = false; // Don't flip for rear camera
             webcam = new tmImage.Webcam(300, 300, flip);
-            await webcam.setup();
+
+            // Set up webcam with the rear camera if available
+            await webcam.setup({ facingMode: "environment" });
             await webcam.play();
             window.requestAnimationFrame(loop);
 
@@ -128,7 +130,6 @@
             for (let i = 0; i < maxPredictions; i++) {
                 const probability = prediction[i].probability;
 
-                // Track the highest probability and associated class
                 if (probability > highestProbability) {
                     highestProbability = probability;
                     highestClass = prediction[i].className;
