@@ -61,9 +61,7 @@
 
         #floating-label, #state-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            z-index: 10;
             background-color: rgba(255, 255, 255, 0.9);
             color: #4a90e2;
             padding: 8px 12px;
@@ -72,13 +70,23 @@
             font-weight: bold;
             display: none;
             transition: opacity 0.3s ease;
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+        }
+
+        #floating-label {
+            top: 40%; /* Position in the center of the video */
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         #state-overlay {
-            top: 70%; /* Position it slightly below the main floating label */
+            top: 60%; /* Position slightly below the floating label */
+            left: 50%;
+            transform: translate(-50%, -50%);
             font-size: 1rem;
             color: #333;
-            padding: 6px 10px;
             opacity: 0.9;
             background-color: rgba(255, 255, 255, 0.8);
         }
@@ -124,8 +132,8 @@
         <h1>Teachable Machine Progress Tracker</h1>
         <div id="webcam-container">
             <video id="webcam" autoplay playsinline></video>
-            <div id="floating-label"></div> <!-- Floating label for class name -->
-            <div id="state-overlay">Esperando paso 1...</div> <!-- Floating state overlay for progress -->
+            <div id="floating-label"></div>
+            <div id="state-overlay">Esperando paso 1...</div>
         </div>
         <button type="button" onclick="init()">Iniciar</button>
         <div id="progress-bar-container">
@@ -143,6 +151,7 @@
         let classRecognitionTime = 0;
         const requiredTime = 10;
         const numClasses = 7;
+        let recognitionComplete = false; // Track if recognition is complete
 
         async function init() {
             const modelURL = URL + "model.json";
@@ -169,6 +178,8 @@
         }
 
         async function predictLoop() {
+            if (recognitionComplete) return; // Stop if all classes are recognized
+
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
                 await predict();
             }
@@ -194,9 +205,8 @@
                 floatingLabel.style.display = "none";
             }
 
-            // Show and update the current state overlay
             stateOverlay.style.display = "block";
-            stateOverlay.innerText = `Waiting for ${currentClassLabel}...`;
+            stateOverlay.innerText = `Esperando por paso ${currentClassLabel.split(" ")[1]}`;
 
             if (classRecognitionTime >= requiredTime) {
                 currentClassIndex++;
@@ -205,6 +215,7 @@
 
                 if (currentClassIndex > numClasses) {
                     stateOverlay.innerText = "All classes recognized!";
+                    recognitionComplete = true; // Stop recognition
                 }
             }
         }
