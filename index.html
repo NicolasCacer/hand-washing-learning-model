@@ -54,19 +54,21 @@
             max-width: 300px; /* Limit max width for mobile */
             height: auto; /* Maintain aspect ratio */
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Light shadow for the video */
+            display: none; /* Hide video initially */
         }
 
         #floating-label {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 50%; /* Center vertically */
+            left: 50%; /* Center horizontally */
+            transform: translate(-50%, -50%); /* Adjust for the size of the element */
             background-color: rgba(255, 255, 255, 0.9); /* Slightly more opaque */
             color: #4a90e2;
             padding: 8px 12px;
             border-radius: 10px;
             font-size: 1.2rem;
             font-weight: bold;
-            display: none;
+            display: none; /* Hidden initially */
             transition: opacity 0.3s ease;
         }
 
@@ -100,7 +102,7 @@
         <button type="button" onclick="init()">Start</button>
         <div id="webcam-container">
             <video id="webcam" autoplay playsinline></video>
-            <div id="floating-label"></div>
+            <div id="floating-label"></div> <!-- Floating label for class name -->
         </div>
     </div>
 
@@ -130,6 +132,7 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
                 video.addEventListener("loadeddata", () => {
+                    video.style.display = "block"; // Show the video once loaded
                     predictLoop();
                 });
 
@@ -162,7 +165,7 @@
             }
 
             const floatingLabel = document.getElementById("floating-label");
-            if (highestProbability > 0.6) {
+            if (highestProbability > 0.6) { // Show only if confidence is higher than 60%
                 floatingLabel.style.display = "block";
                 floatingLabel.style.opacity = 1;
                 floatingLabel.innerText = highestClass;
