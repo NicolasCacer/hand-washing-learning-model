@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teachable Machine Progress Tracker</title>
+    <title>Adherencia de Técnica de Lavado</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <style>
         * {
@@ -56,11 +56,10 @@
         video {
             border-radius: 12px;
             width: 100%;
-            max-width: 350px;
             display: none; /* Initially hidden until Start is clicked */
         }
 
-        #floating-label {
+        #floating-label, #state-overlay {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -73,6 +72,15 @@
             font-weight: bold;
             display: none;
             transition: opacity 0.3s ease;
+        }
+
+        #state-overlay {
+            top: 70%; /* Position it slightly below the main floating label */
+            font-size: 1rem;
+            color: #333;
+            padding: 6px 10px;
+            opacity: 0.9;
+            background-color: rgba(255, 255, 255, 0.8);
         }
 
         button {
@@ -109,12 +117,6 @@
             width: 0%;
             transition: width 0.3s;
         }
-
-        #status {
-            font-size: 1.1rem;
-            color: #555;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
@@ -123,12 +125,12 @@
         <div id="webcam-container">
             <video id="webcam" autoplay playsinline></video>
             <div id="floating-label"></div> <!-- Floating label for class name -->
+            <div id="state-overlay">Esperando paso 1...</div> <!-- Floating state overlay for progress -->
         </div>
-        <button type="button" onclick="init()">Start</button>
+        <button type="button" onclick="init()">Iniciar</button>
         <div id="progress-bar-container">
             <div id="progress-bar"></div>
         </div>
-        <div id="status">Waiting for class 1...</div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
@@ -181,8 +183,9 @@
 
             const currentClassLabel = "Class " + currentClassIndex;
             const floatingLabel = document.getElementById("floating-label");
+            const stateOverlay = document.getElementById("state-overlay");
 
-            if (highestPrediction.className === currentClassLabel && highestPrediction.probability > 0.6) {
+            if (highestPrediction.className === currentClassLabel && highestPrediction.probability > 0.5) {
                 classRecognitionTime += 1;
                 floatingLabel.style.display = "block";
                 floatingLabel.innerText = currentClassLabel;
@@ -191,17 +194,18 @@
                 floatingLabel.style.display = "none";
             }
 
+            // Show and update the current state overlay
+            stateOverlay.style.display = "block";
+            stateOverlay.innerText = `Waiting for ${currentClassLabel}...`;
+
             if (classRecognitionTime >= requiredTime) {
                 currentClassIndex++;
                 updateProgress();
                 classRecognitionTime = 0;
-            }
 
-            if (currentClassIndex > numClasses) {
-                document.getElementById("status").innerText = "All classes recognized!";
-                return;
-            } else {
-                document.getElementById("status").innerText = `Waiting for ${currentClassLabel}...`;
+                if (currentClassIndex > numClasses) {
+                    stateOverlay.innerText = "All classes recognized!";
+                }
             }
         }
 
